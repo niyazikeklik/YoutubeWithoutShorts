@@ -4,114 +4,94 @@
  *
  * @format
  */
-
-import React from 'react';
-import type {PropsWithChildren} from 'react';
+import React, {useCallback, useRef, useState} from 'react';
 import {
+  RefreshControl,
   SafeAreaView,
   ScrollView,
-  StatusBar,
   StyleSheet,
-  Text,
-  useColorScheme,
-  View,
 } from 'react-native';
-
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
-
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
-
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
+import WebView from 'react-native-webview';
 
 function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+  const javascriptInjection = `
+      function removeAllShorts() {
+        var allshorts = document.querySelectorAll('[class*="pivot-shorts"]');
+        for (let element of allshorts) {
+          element.parentElement.remove();
+        }
+        var element2 = document.querySelector('[class="ShortsLockupViewModelHost"]');
+        if (element2) {
+          element2.parentElement.parentElement.parentElement.parentElement.remove();
+        }
+      }
+      window.addEventListener('navigate', ()=> {
+        removeAllShorts();
+      });
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
+      setInterval(() => {
+        removeAllShorts();
+      }, 1000);
+      removeAllShorts();
+      true;
+      `;
+
+  const [refreshing, setRefreshing] = useState(false);
+  const webViewRef = useRef<WebView>(null);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    if (webViewRef.current) {
+      webViewRef.current.reload();
+    }
+    setRefreshing(false);
+  }, []);
 
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
+    <SafeAreaView style={styles.container}>
       <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
+        contentContainerStyle={styles.scrollViewContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }>
+        <WebView
+          ref={webViewRef}
+          source={{uri: 'https://m.youtube.com'}}
+          injectedJavaScript={javascriptInjection}
+          style={styles.webView}
+          allowsFullscreenVideo={true}
+          javaScriptEnabled={true}
+          domStorageEnabled={true}
+          startInLoadingState={true}
+          scalesPageToFit={true}
+          scrollEnabled={true}
+          bounces={false}
+        />
       </ScrollView>
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+  container: {
+    flex: 1,
   },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
+  scrollViewContent: {
+    flexGrow: 1,
   },
-  sectionDescription: {
-    marginTop: 8,
+  header: {
+    padding: 16,
+    backgroundColor: '#f8f9fa',
+  },
+  headerText: {
     fontSize: 18,
-    fontWeight: '400',
+    fontWeight: 'bold',
   },
-  highlight: {
-    fontWeight: '700',
+  webViewContainer: {
+    flex: 1,
+    height: 500, // WebView'in yüksekliğini belirtin veya flex ayarlarını kullanın
+  },
+  webView: {
+    flex: 1,
   },
 });
 
