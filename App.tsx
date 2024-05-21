@@ -4,20 +4,21 @@
  *
  * @format
  */
-import React, {useCallback, useRef, useState} from 'react';
+import React, {useCallback, useRef, useState, useEffect} from 'react';
 import {
   RefreshControl,
   SafeAreaView,
   ScrollView,
   StyleSheet,
 } from 'react-native';
+import { BackHandler, ToastAndroid } from 'react-native';
 import WebView from 'react-native-webview';
 
 function App(): React.JSX.Element {
   const javascriptInjection = `
       function removeAllShorts() {
-        var allshorts = document.querySelectorAll('[class*="pivot-shorts"]');
-        for (let element of allshorts) {
+        var element = document.querySelector('[class*="pivot-shorts"]');
+        if (element) {
           element.parentElement.remove();
         }
         var element2 = document.querySelector('[class="ShortsLockupViewModelHost"]');
@@ -26,18 +27,34 @@ function App(): React.JSX.Element {
         }
       }
       window.addEventListener('navigate', ()=> {
-        removeAllShorts();
+        setTimeout(()=> removeAllShorts(), 50);
       });
-
-      setInterval(() => {
-        removeAllShorts();
-      }, 1000);
       removeAllShorts();
       true;
       `;
 
   const [refreshing, setRefreshing] = useState(false);
   const webViewRef = useRef<WebView>(null);
+  
+
+  useEffect(() => {
+    const onBackPress = () => {
+      if (webViewRef.current && webViewRef.current.canGoBack) {
+        webViewRef.current.goBack();
+        return true; // Default behavior of BackHandler is prevented
+      } else {
+        // Optionally show a toast or handle the back press when WebView can't go back
+        ToastAndroid.show('No more pages to go back', ToastAndroid.SHORT);
+        return false; // Let the default back action occur
+      }
+    };
+
+    BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+    return () => {
+      BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+    };
+  }, []);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -66,6 +83,9 @@ function App(): React.JSX.Element {
           scalesPageToFit={true}
           scrollEnabled={true}
           bounces={false}
+          onNavigationStateChange={(navState) => {
+            webViewRef.current.canGoBack = navState.canGoBack;
+          }}
         />
       </ScrollView>
     </SafeAreaView>
