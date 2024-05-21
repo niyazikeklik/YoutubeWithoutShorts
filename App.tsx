@@ -1,9 +1,4 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+/* eslint-disable prettier/prettier */
 import React, {useCallback, useRef, useState, useEffect} from 'react';
 import {
   RefreshControl,
@@ -11,7 +6,7 @@ import {
   ScrollView,
   StyleSheet,
 } from 'react-native';
-import { BackHandler, ToastAndroid } from 'react-native';
+import {BackHandler, ToastAndroid} from 'react-native';
 import WebView from 'react-native-webview';
 
 function App(): React.JSX.Element {
@@ -35,11 +30,10 @@ function App(): React.JSX.Element {
 
   const [refreshing, setRefreshing] = useState(false);
   const webViewRef = useRef<WebView>(null);
-  
 
   useEffect(() => {
     const onBackPress = () => {
-      if (webViewRef.current && webViewRef.current.canGoBack) {
+      if (webViewRef.current) {
         webViewRef.current.goBack();
         return true; // Default behavior of BackHandler is prevented
       } else {
@@ -83,9 +77,6 @@ function App(): React.JSX.Element {
           scalesPageToFit={true}
           scrollEnabled={true}
           bounces={false}
-          onNavigationStateChange={(navState) => {
-            webViewRef.current.canGoBack = navState.canGoBack;
-          }}
         />
       </ScrollView>
     </SafeAreaView>
